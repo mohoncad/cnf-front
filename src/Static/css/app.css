@@ -1,0 +1,13 @@
+body {
+    margin: 0;
+    font-family: Arial, serif;
+    background: #f4f6f8;
+}
+
+* {
+    -ms-overflow-style: none; /* IE 11 */
+    scrollbar-width: none; /* Firefox 64 */
+}
+*::-webkit-scrollbar {
+    display: none;
+}

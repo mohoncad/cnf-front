@@ -1,0 +1,716 @@
+import React from "react";
+import PropTypes from "prop-types";
+import { makeStyles } from "@material-ui/core/styles";
+import Table from "@material-ui/core/Table";
+import TableBody from "@material-ui/core/TableBody";
+import TableCell from "@material-ui/core/TableCell";
+import TableContainer from "@material-ui/core/TableContainer";
+import TableHead from "@material-ui/core/TableHead";
+import TableRow from "@material-ui/core/TableRow";
+import TableSortLabel from "@material-ui/core/TableSortLabel";
+import Paper from "@material-ui/core/Paper";
+import IconButton from "@material-ui/core/IconButton";
+import Tooltip from "@material-ui/core/Tooltip";
+import DeleteIcon from "@material-ui/icons/Delete";
+import DeleteSweepIcon from "@material-ui/icons/DeleteSweep";
+import CloseIcon from "@material-ui/icons/Close";
+import EditIcon from "@material-ui/icons/Edit";
+import VisibilityIcon from "@material-ui/icons/Visibility";
+import DeleteForeverIcon from "@material-ui/icons/DeleteForever";
+import RestoreFromTrashIcon from "@material-ui/icons/RestoreFromTrash";
+import InputBase from "@material-ui/core/InputBase";
+import SearchIcon from "@material-ui/icons/Search";
+import Menu from "@material-ui/core/Menu";
+import MenuItem from "@material-ui/core/MenuItem";
+import Grid from "@material-ui/core/Grid";
+import { APP } from "../../../App/AppProvider";
+import CheckCircleOutlineIcon from "@material-ui/icons/CheckCircleOutline";
+import Fade from "@material-ui/core/Fade";
+
+const useStyles = makeStyles((theme) => ({
+  root: {
+    width: "100%",
+  },
+  paper: {
+    width: "100%",
+    padding: "10px",
+    marginBottom: theme.spacing(2),
+  },
+  table: {
+    minWidth: 750,
+    userSelect: "none",
+    msUserSelect: "none",
+  },
+  visuallyHidden: {
+    border: 0,
+    clip: "rect(0 0 0 0)",
+    height: 1,
+    margin: -1,
+    overflow: "hidden",
+    padding: 0,
+    position: "absolute",
+    top: 20,
+    width: 1,
+  },
+
+  TableHead: {
+    border: "1px solid #dddddd",
+    fontWeight: "bold",
+    background: APP.CONFIG.COLORS.PRIMARY,
+    color: "#ffffff",
+  },
+  TableCell: {
+    border: "1px solid #dddddd",
+  },
+  TableActionButton: {
+    fontWeight: "bold",
+    color: APP.CONFIG.COLORS.PRIMARY,
+  },
+  TableBypassActionButton: {
+    fontWeight: "bold",
+    color: APP.CONFIG.COLORS.ACTION_BTN.BYPASS_SELECTOR,
+  },
+  TableDeleteActionButton: {
+    fontWeight: "bold",
+    color: APP.CONFIG.COLORS.ACTION_BTN.DANGER,
+  },
+}));
+
+const ContextMenuInitialState = {
+  mouseX: null,
+  mouseY: null,
+};
+
+function descendingComparator(a, b, orderBy) {
+  if (b[orderBy] < a[orderBy]) {
+    return -1;
+  }
+  if (b[orderBy] > a[orderBy]) {
+    return 1;
+  }
+  return 0;
+}
+
+function getComparator(order, orderBy) {
+  return order === "desc"
+    ? (a, b) => descendingComparator(a, b, orderBy)
+    : (a, b) => -descendingComparator(a, b, orderBy);
+}
+
+function stableSort(array, comparator) {
+  const stabilizedThis = array.map((el, index) => [el, index]);
+  stabilizedThis.sort((a, b) => {
+    const order = comparator(a[0], b[0]);
+    if (order !== 0) return order;
+    return a[1] - b[1];
+  });
+  return stabilizedThis.map((el) => el[0]);
+}
+
+const headCells = [
+  {
+    id: "sn",
+    align: "left",
+    disablePadding: false,
+    TrashModeOnly: false,
+    label: "#",
+  },
+  {
+    id: "Code",
+    align: "left",
+    disablePadding: false,
+    TrashModeOnly: false,
+    label: "Code",
+  },
+  {
+    id: "Name",
+    align: "left",
+    disablePadding: false,
+    TrashModeOnly: false,
+    label: "Name",
+  },
+  {
+    id: "Email",
+    align: "left",
+    disablePadding: false,
+    TrashModeOnly: false,
+    label: "Email",
+  },
+  {
+    id: "ContactNumber",
+    align: "center",
+    disablePadding: false,
+    TrashModeOnly: false,
+    label: "Contact Number",
+  },
+  {
+    id: "DeletedBy",
+    align: "center",
+    disablePadding: false,
+    TrashModeOnly: true,
+    label: "Deleted By",
+  },
+  {
+    id: "DeletedAt",
+    align: "center",
+    disablePadding: false,
+    TrashModeOnly: true,
+    label: "Deleted At",
+  },
+  {
+    id: "action",
+    align: "center",
+    disablePadding: false,
+    TrashModeOnly: false,
+    label: "Action",
+  },
+];
+
+function EnhancedTableHead(props) {
+  const { classes, order, orderBy, onRequestSort } = props;
+  const createSortHandler = (property) => (event) => {
+    onRequestSort(event, property);
+  };
+
+  return (
+    <TableHead>
+      <TableRow>
+        {headCells.map((headCell) => (
+          <React.Fragment key={headCell.id}>
+            {!headCell.TrashModeOnly && (
+              <TableCell
+                className={classes.TableHead}
+                align={headCell.align}
+                padding={headCell.disablePadding ? "none" : "default"}
+                sortDirection={orderBy === headCell.id ? order : false}
+              >
+                <TableSortLabel
+                  active={orderBy === headCell.id}
+                  direction={orderBy === headCell.id ? order : "asc"}
+                  onClick={createSortHandler(headCell.id)}
+                >
+                  {headCell.label}
+                  {orderBy === headCell.id ? (
+                    <span className={classes.visuallyHidden}>
+                      {order === "desc"
+                        ? "sorted descending"
+                        : "sorted ascending"}
+                    </span>
+                  ) : null}
+                </TableSortLabel>
+              </TableCell>
+            )}
+
+            {props.trashMode && headCell.TrashModeOnly && (
+              <TableCell
+                className={classes.TableHead}
+                align={headCell.align}
+                padding={headCell.disablePadding ? "none" : "default"}
+                sortDirection={orderBy === headCell.id ? order : false}
+              >
+                <TableSortLabel
+                  active={orderBy === headCell.id}
+                  direction={orderBy === headCell.id ? order : "asc"}
+                  onClick={createSortHandler(headCell.id)}
+                >
+                  {headCell.label}
+                  {orderBy === headCell.id ? (
+                    <span className={classes.visuallyHidden}>
+                      {order === "desc"
+                        ? "sorted descending"
+                        : "sorted ascending"}
+                    </span>
+                  ) : null}
+                </TableSortLabel>
+              </TableCell>
+            )}
+          </React.Fragment>
+        ))}
+      </TableRow>
+    </TableHead>
+  );
+}
+
+EnhancedTableHead.propTypes = {
+  classes: PropTypes.object.isRequired,
+  trashMode: PropTypes.bool.isRequired,
+  onRequestSort: PropTypes.func.isRequired,
+  order: PropTypes.oneOf(["asc", "desc"]).isRequired,
+  orderBy: PropTypes.string.isRequired,
+};
+
+function Screen(props) {
+  const classes = useStyles();
+  const [order, setOrder] = React.useState("asc");
+  const [orderBy, setOrderBy] = React.useState("");
+
+  // const [BypassTempArray, setBypassTempArray] = React.useState(
+  //   props.BypassTempArray
+  // );
+  // const searchBypassSelected = (ID) =>
+  //   BypassTempArray.find((element) => element.id === ID);
+
+  const [ContextMenu, setContextMenu] = React.useState(ContextMenuInitialState);
+  const [ContextMenuAction, setContextMenuAction] = React.useState({
+    bypassObjectSelect: () => {},
+    edit: () => {},
+    delete: () => {},
+    restore: () => {},
+  });
+  const [ContextMenuActionID, setContextMenuActionID] = React.useState(0);
+
+  const [SearchQuery, setSearchQuery] = React.useState("");
+
+  const TrashViewPermission =
+    Number(
+      new APP.SERVICES.UAP().GetModulePermissions(APP.CONFIG.MODULE[3]).Trash
+    ) === 1;
+    const EditPermission =
+    Number(
+      new APP.SERVICES.UAP().GetModulePermissions(APP.CONFIG.MODULE[3]).Edit
+    ) === 1;
+    const DeletePermission =
+    Number(
+      new APP.SERVICES.UAP().GetModulePermissions(APP.CONFIG.MODULE[3]).Delete
+    ) === 1;
+    const ViewPermission =
+    Number(
+      new APP.SERVICES.UAP().GetModulePermissions(APP.CONFIG.MODULE[3]).View
+    ) === 1;
+    const RestorePermission =
+    Number(
+      new APP.SERVICES.UAP().GetModulePermissions(APP.CONFIG.MODULE[3]).Restore
+    ) === 1;
+    const DeleteForever =
+    Number(
+      new APP.SERVICES.UAP().GetModulePermissions(APP.CONFIG.MODULE[3]).DeleteForever
+    ) === 1;
+  const handleRequestSort = (event, property) => {
+    const isAsc = orderBy === property && order === "asc";
+    setOrder(isAsc ? "desc" : "asc");
+    setOrderBy(property);
+  };
+
+  const handleSearchInput = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    props.onSearchSubmit(SearchQuery);
+  };
+
+  const handleOpenContextMenu = (event, action, action_id) => {
+    event.preventDefault();
+    setContextMenu({
+      mouseX: event.clientX - 2,
+      mouseY: event.clientY - 4,
+    });
+
+    setContextMenuAction(action);
+    setContextMenuActionID(action_id);
+  };
+
+  const handleCloseContextMenu = () => {
+    setContextMenu(ContextMenuInitialState);
+  };
+
+  let data = props.data,
+    sn = 1;
+  for (let $i = 0; $i < data.length; $i++) {
+    data[$i].sn = sn;
+
+    sn++;
+  }
+
+  // React.useEffect(() => {
+  //   setBypassTempArray(props.BypassTempArray);
+  // }, [props.BypassTempArray]);
+
+  return (
+    <div className={classes.root}>
+      <Paper className={classes.paper} variant={"elevation"} elevation={1}>
+        <Grid container spacing={0}>
+          <Grid
+            item
+            {...(TrashViewPermission ? { xs: 10, sm: 11 } : { xs: 12, sm: 12 })}
+          >
+            <form onSubmit={handleSearchSubmit}>
+              <Paper
+                variant="elevation"
+                square={false}
+                style={{
+                  padding: "2px 10px 2px 15px",
+                  display: "flex",
+                  alignItems: "center",
+                  margin: "auto 1px 5px 1px",
+                }}
+              >
+                <InputBase
+                  fullWidth={true}
+                  name={"search_query"}
+                  style={{ flex: 1 }}
+                  placeholder="Search"
+                  inputProps={{ "aria-label": "Search" }}
+                  autoComplete={"off"}
+                  autoFocus={true}
+                  onChange={handleSearchInput}
+                />
+                <IconButton
+                  type={"submit"}
+                  style={{ padding: 7 }}
+                  aria-label="Search"
+                >
+                  <SearchIcon fontSize={"small"} />
+                </IconButton>
+              </Paper>
+            </form>
+          </Grid>
+          {TrashViewPermission && (
+            <Grid item xs={2} sm={1}>
+              <Paper
+                variant="outlined"
+                square={false}
+                style={{
+                  padding: "2px 0px 2px 0px",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  margin: "auto 1px 5px 1px",
+                  border: 0,
+                }}
+              >
+                <Tooltip
+                  title={props.TrashMode ? "Close Trash" : "View Trash"}
+                  placement="top"
+                >
+                  <IconButton
+                    type={"submit"}
+                    style={{
+                      padding: 7,
+                      color: APP.CONFIG.COLORS.ACTION_BTN.DANGER,
+                    }}
+                    onClick={props.onTrashModeToggle}
+                  >
+                    {!props.TrashMode && <DeleteSweepIcon fontSize={"small"} />}
+                    {props.TrashMode && <CloseIcon fontSize={"small"} />}
+                  </IconButton>
+                </Tooltip>
+              </Paper>
+            </Grid>
+          )}
+        </Grid>
+
+        <TableContainer onContextMenu={(e) => e.preventDefault()}>
+          <Table className={classes.table} size={"small"}>
+            <EnhancedTableHead
+              classes={classes}
+              trashMode={props.TrashMode}
+              order={order}
+              orderBy={orderBy}
+              onRequestSort={handleRequestSort}
+            />
+            <TableBody>
+              {stableSort(data, getComparator(order, orderBy)).map(
+                (row, index) => {
+                  return (
+                    <TableRow
+                      key={row.id}
+                      hover
+                      title={
+                        props.BypassMode
+                          ? "Ctrl + click to select this branch"
+                          : "Double click to view"
+                      }
+                      onContextMenu={(e) =>
+                        handleOpenContextMenu(
+                          e,
+                          {
+                            bypassObjectSelect: () => {
+                              row.title = row.Name;
+                              props.onBypassObjectSelected(row);
+                              handleCloseContextMenu();
+                            },
+                            view: () => {
+                              props.onViewAction(row.id, row.Name, row.Code, row.Address, row.Email, row.ContactNumber);
+                              handleCloseContextMenu();
+                            },
+                            edit: () => {
+                              props.onViewAction(row.id, row.Name, row.Code, row.Address, row.Email, row.ContactNumber);
+                              handleCloseContextMenu();
+                            },
+                            delete: () => {
+                              props.onDeleteAction(row.id);
+                              handleCloseContextMenu();
+                            },
+                            restore: () => {
+                              props.onRestoreAction(row.id);
+                              handleCloseContextMenu();
+                            },
+                          },
+                          row.id
+                        )
+                      }
+                      onDoubleClick={() => {
+                        if (!props.TrashMode) {
+                        if(ViewPermission) {
+                          props.onViewAction(row.id, row.Name, row.Code, row.Address, row.Email, row.ContactNumber);
+                        }
+                        }
+                      }}
+                      onClick={(e) => {
+                        if (e.ctrlKey) {
+                          if (props.BypassMode && !props.TrashMode) {
+                            row.title = row.Name;
+                            props.onBypassObjectSelected(row);
+                          }
+                        }
+                      }}
+                    >
+                      <TableCell
+                        className={classes.TableCell}
+                        
+                        align="left"
+                      >
+                        {row.sn}
+                      </TableCell>
+                      <TableCell
+                        className={classes.TableCell}
+                        
+                        align="left"
+                      >
+                        {row.Code}
+                      </TableCell>
+                      <TableCell className={classes.TableCell} align="left">
+                        {row.Name}
+                      </TableCell>
+                      <TableCell
+                        className={classes.TableCell}
+                        
+                        align="left"
+                      >
+                        {row.Email}
+                      </TableCell>
+                      <TableCell
+                        className={classes.TableCell}
+                        
+                        align="center"
+                      >
+                        {row.ContactNumber}
+                      </TableCell>
+
+                      {props.TrashMode && (
+                        <React.Fragment>
+                          <TableCell
+                            className={classes.TableCell}
+                            
+                            align="left"
+                          >
+                            <div style={{ whiteSpace: "pre-wrap" }}>
+                              {row.DeletedBy}
+                            </div>
+                          </TableCell>
+                          <TableCell
+                            className={classes.TableCell}
+                            
+                            align="left"
+                          >
+                            <div style={{ whiteSpace: "pre-wrap" }}>
+                              {row.DeletedAt}
+                            </div>
+                          </TableCell>
+                        </React.Fragment>
+                      )}
+
+                      <TableCell className={classes.TableCell} align="center">
+                        {!props.TrashMode && (
+                          <React.Fragment>
+                            {props.BypassMode && (
+                              <React.Fragment>
+                                <Tooltip
+                                  title={"Select branch"}
+                                  placement={"top"}
+                                  enterDelay={500}
+                                >
+                                  <IconButton
+                                    size={"small"}
+                                    className={classes.TableBypassActionButton}
+                                    onClick={() => {
+                                      row.title = row.Name;
+                                      props.onBypassObjectSelected(row);
+                                    }}
+                                  >
+                                    {/* {searchBypassSelected(row.id) ? (
+                                      <CheckCircleIcon fontSize={"small"} />
+                                    ) : ( */}
+                                      <CheckCircleOutlineIcon
+                                        fontSize={"small"}
+                                      />
+                                    {/* )} */}
+                                  </IconButton>
+                                </Tooltip>
+                                &nbsp;&nbsp;
+                              </React.Fragment>
+                            )}
+                            {ViewPermission && (
+                              <Tooltip
+                                title={"View"}
+                                placement={"top"}
+                                enterDelay={500}
+                              >
+                                <IconButton
+                                  size={"small"}
+                                  className={classes.TableActionButton}
+                                  onClick={() =>  props.onViewAction(row.id, row.Name, row.Code, row.Address, row.Email, row.ContactNumber)}
+                                >
+                                  <VisibilityIcon fontSize={"small"} />
+                                </IconButton>
+                              </Tooltip>
+                              )
+                            }
+                            &nbsp;&nbsp;
+                            {EditPermission && (
+                            
+                            <Tooltip
+                              title={"Edit"}
+                              placement={"top"}
+                              enterDelay={500}
+                            >
+                              <IconButton
+                                size={"small"}
+                                className={classes.TableActionButton}
+                                onClick={() => props.onEditAction(row.id, row.Name, row.Code, row.Address, row.Email, row.ContactNumber)}
+                              >
+                                <EditIcon fontSize={"small"} />
+                              </IconButton>
+                            </Tooltip>)}
+                            &nbsp;&nbsp;
+                            {DeletePermission && (
+                            <Tooltip
+                              title={"Delete"}
+                              placement={"top"}
+                              enterDelay={500}
+                            >
+                              <IconButton
+                                size={"small"}
+                                className={classes.TableDeleteActionButton}
+                                onClick={() => props.onDeleteAction(row.id)}
+                              >
+                                <DeleteIcon fontSize={"small"} />
+                              </IconButton>
+                            </Tooltip>)}
+                          </React.Fragment>
+                        )}
+
+                        {props.TrashMode && (
+                          <React.Fragment>
+                            { RestorePermission && (
+
+                            <Tooltip
+                              title={"Restore"}
+                              placement={"top"}
+                              enterDelay={500}
+                            >
+                              <IconButton
+                                size={"small"}
+                                className={classes.TableActionButton}
+                                onClick={() => props.onRestoreAction(row.id)}
+                              >
+                                <RestoreFromTrashIcon fontSize={"small"} />
+                              </IconButton>
+                            </Tooltip>)}
+
+                            &nbsp;&nbsp;
+                            { DeleteForever && (
+                            
+                            <Tooltip
+                              title={"Delete Forever"}
+                              placement={"top"}
+                              enterDelay={500}
+                            >
+                              <IconButton
+                                size={"small"}
+                                className={classes.TableDeleteActionButton}
+                                onClick={() => props.onDeleteAction(row.id)}
+                              >
+                                <DeleteForeverIcon fontSize={"small"} />
+                              </IconButton>
+                            </Tooltip>)}
+                          </React.Fragment>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                }
+              )}
+            </TableBody>
+          </Table>
+
+          {/* Context menu for table rows */}
+          <Menu
+            keepMounted
+            elevation={4}
+            open={ContextMenu.mouseY !== null}
+            onClose={handleCloseContextMenu}
+            onContextMenu={handleCloseContextMenu}
+            anchorReference="anchorPosition"
+            anchorPosition={
+              ContextMenu.mouseY !== null && ContextMenu.mouseX !== null
+                ? { top: ContextMenu.mouseY, left: ContextMenu.mouseX }
+                : undefined
+            }
+            TransitionComponent={Fade}
+            PaperProps={{
+              style: {
+                width: "20ch",
+              },
+            }}
+          >
+            {!props.TrashMode && (
+              <div>
+          {ViewPermission && (
+                <MenuItem onClick={ContextMenuAction.view}>View</MenuItem>
+              )}
+              {EditPermission && (
+                <MenuItem onClick={ContextMenuAction.edit}>Edit</MenuItem>
+              )}
+              {DeletePermission && (
+                <MenuItem onClick={ContextMenuAction.delete}>Delete</MenuItem>
+              )}
+              </div>
+            )}
+
+            {props.TrashMode && (
+              <div>
+               {
+                RestorePermission && <MenuItem onClick={ContextMenuAction.restore}>Restore</MenuItem>
+              }
+              {
+                DeleteForever && <MenuItem onClick={ContextMenuAction.delete}>
+                Delete Forever
+              </MenuItem>
+              } 
+              </div>
+            )}
+          </Menu>
+        </TableContainer>
+      </Paper>
+    </div>
+  );
+}
+
+Screen.propTypes = {
+  data: PropTypes.array,
+  TrashMode: PropTypes.bool,
+  BypassMode: PropTypes.bool,
+  BypassSelectedId: PropTypes.number,
+  onSearchSubmit: PropTypes.func,
+  onViewAction: PropTypes.func,
+  onEditAction: PropTypes.func,
+  onDeleteAction: PropTypes.func,
+  onRestoreAction: PropTypes.func,
+  onTrashModeToggle: PropTypes.func,
+  onBypassIdSelected: PropTypes.func,
+};
+
+export {Screen};

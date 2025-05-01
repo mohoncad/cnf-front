@@ -1,0 +1,8 @@
+@media print {
+  nav, header {
+    display: none !important;
+  }
+  .makeStyles-MainContent-20 {
+    margin: 0 !important;
+  }
+}

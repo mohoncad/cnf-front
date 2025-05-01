@@ -1,0 +1,260 @@
+import React, {Component} from 'react';
+import ModuleAccessible from "../../../Vendor/Middleware/ModuleAccessible/ModuleAccessible";
+import * as UsersGrid from "../../../Screens/Private/Users/Screen.UsersGrid";
+import FloatingAlert from "../../../Components/Common/FloatingAlert/FloatingAlert";
+import FloatingProgressbar from "../../../Components/Common/FloatingProgressbar/FloatingProgressbar";
+import PromptDialog from "../../../Components/Common/PromptDialog/PromptDialog";
+import * as UserForm from "../../../Screens/Private/Users/Screen.UserForm";
+
+class Users extends Component {
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            /**
+             * --------------------------------------------------------------------------
+             * Core States
+             */
+            __FaShow: false,
+            __FaType: "",
+            __FaMessage: "",
+            __FaDuration: "",
+            __FaVerticalAlign: "",
+            __FaHorizontalAlign: "",
+
+            __FaProgressBarShow: false,
+            __FaProgressBarType: "",
+            __FaProgressBarMessage: "",
+            __FaProgressBarVerticalAlign: "",
+            __FaProgressBarHorizontalAlign: "",
+
+            __PromptDialogShow: false,
+            __PromptDialogTargetActionName: "",
+            __PromptDialogTargetActionID: "",
+            __PromptDialogTitle: "",
+            __PromptDialogMessage: "",
+            /**
+             * Core States End
+             * --------------------------------------------------------------------------
+             */
+
+
+            ActionFormOpen: false,
+            ActionMode: "",
+            ActionId: 0,
+
+            GridShouldReload: false,
+        };
+
+
+        /**
+         * ---------------------------------------------------------------------------------
+         * Core Method Bindings
+         */
+        this.__SetFA = this.__SetFA.bind(this);
+        this.__RemoveFA = this.__RemoveFA.bind(this);
+        this.__SetFAP = this.__SetFAP.bind(this);
+        this.__RemoveFAP = this.__RemoveFAP.bind(this);
+        this.__PD = this.__PD.bind(this);
+        this.__PDRunAction = this.__PDRunAction.bind(this);
+        /**
+         * Core Method Binding Ends
+         * ---------------------------------------------------------------------------------
+         */
+
+        this.handleGridShouldReload = this.handleGridShouldReload.bind(this);
+
+        this.handleOpenActionForm = this.handleOpenActionForm.bind(this);
+        this.handleCloseActionForm = this.handleCloseActionForm.bind(this);
+    }
+
+
+    /**
+     * ---------------------------------------------------------------------------------
+     * Core Method Declaration
+     */
+    __SetFA(type, message, duration, verticalAlign, horizontalAlign) {
+        this.__RemoveFAP();
+
+        type = typeof type === "undefined" ? "" : type;
+        message = typeof message === "undefined" ? "" : message;
+        duration = typeof duration === "undefined" ? "" : duration;
+        verticalAlign = typeof verticalAlign === "undefined" ? "" : verticalAlign;
+        horizontalAlign = typeof horizontalAlign === "undefined" ? "" : horizontalAlign;
+
+        this.setState({
+            __FaShow: false,
+            __FaType: "",
+            __FaMessage: "",
+            __FaDuration: "",
+            __FaVerticalAlign: "",
+            __FaHorizontalAlign: "",
+        }, () => {
+            this.setState({
+                __FaShow: true,
+                __FaType: type,
+                __FaMessage: message,
+                __FaDuration: duration === '' ? 0 : Number(duration),
+                __FaVerticalAlign: verticalAlign,
+                __FaHorizontalAlign: horizontalAlign,
+            });
+        });
+    }
+
+    __RemoveFA() {
+        this.setState({
+            __FaShow: false,
+            __FaType: "",
+            __FaMessage: "",
+            __FaDuration: "",
+            __FaVerticalAlign: "",
+            __FaHorizontalAlign: "",
+        });
+    }
+
+    __SetFAP(type, message, verticalAlign, horizontalAlign) {
+        this.__RemoveFA();
+
+        this.setState({
+            __FaProgressBarShow: false,
+            __FaProgressBarType: "",
+            __FaProgressBarMessage: "",
+            __FaProgressBarVerticalAlign: "",
+            __FaProgressBarHorizontalAlign: "",
+        }, () => {
+            this.setState({
+                __FaProgressBarShow: true,
+                __FaProgressBarType: type,
+                __FaProgressBarMessage: message,
+                __FaProgressBarVerticalAlign: verticalAlign,
+                __FaProgressBarHorizontalAlign: horizontalAlign,
+            });
+        });
+    }
+
+    __RemoveFAP() {
+        this.setState({
+            __FaProgressBarShow: false,
+            __FaProgressBarType: "",
+            __FaProgressBarMessage: "",
+            __FaProgressBarVerticalAlign: "",
+            __FaProgressBarHorizontalAlign: "",
+        });
+    }
+
+    __PD(action_name, action_id, title, message) {
+        this.setState({
+            __PromptDialogShow: false,
+            __PromptDialogTitle: "",
+            __PromptDialogMessage: "",
+            __PromptDialogTargetActionName: "",
+            __PromptDialogTargetActionID: "",
+        }, () => {
+            this.setState({
+                __PromptDialogShow: true,
+                __PromptDialogTitle: title,
+                __PromptDialogMessage: message,
+                __PromptDialogTargetActionName: action_name,
+                __PromptDialogTargetActionID: action_id,
+            });
+        })
+    }
+
+    __PDRunAction() {
+
+        let action_name = this.state.__PromptDialogTargetActionName;
+        let action_id = this.state.__PromptDialogTargetActionID;
+
+        //call your callback confirm functions here
+        if (action_name === "DeleteUser") {
+            this.TryUserDelete(action_id);
+        }
+
+    }
+
+    /**
+     * Core Method Declaration Ends
+     * ---------------------------------------------------------------------------------
+     */
+
+    handleGridShouldReload(ReloadStatus) {
+        this.setState({
+            GridShouldReload: ReloadStatus,
+        });
+    }
+
+
+    handleOpenActionForm(ActionMode, ActionId) {
+        this.setState({
+            ActionFormOpen: true,
+            ActionMode: ActionMode,
+            ActionId: ActionId,
+        });
+    }
+
+    handleCloseActionForm() {
+        this.setState({
+            ActionFormOpen: false,
+            ActionMode: "",
+            ActionId: 0,
+        });
+
+        this.handleGridShouldReload(true);
+    }
+
+
+    componentDidMount() {
+        document.title = "User List";
+    }
+
+
+    render() {
+        return (
+            <ModuleAccessible ModuleIndex={2}>
+
+                <UsersGrid.Screen GridShouldReload={this.state.GridShouldReload} onUpdateGridShouldReload={this.handleGridShouldReload}
+                                  onAddAction={() => this.handleOpenActionForm('ADD', 0)} onEditAction={this.handleOpenActionForm} onViewAction={this.handleOpenActionForm}/>
+
+                <UserForm.Screen actionMode={this.state.ActionMode} actionId={this.state.ActionId} open={this.state.ActionFormOpen} onClose={this.handleCloseActionForm}/>
+
+
+                {/* Floating Alert */}
+                {this.state.__FaShow && (
+                    <FloatingAlert
+                        show={this.state.__FaShow}
+                        type={this.state.__FaType}
+                        message={this.state.__FaMessage}
+                        duration={this.state.__FaDuration}
+                        verticalAlign={this.state.__FaVerticalAlign}
+                        horizontalAlign={this.state.__FaHorizontalAlign}
+                    />
+                )}
+
+
+                {/* Floating Progress Bar */}
+                {this.state.__FaProgressBarShow && (
+                    <FloatingProgressbar
+                        show={this.state.__FaProgressBarShow}
+                        type={this.state.__FaProgressBarType}
+                        {...this.state.__FaProgressBarMessage !== "" ? {message: this.state.__FaProgressBarMessage} : ""}
+                        {...this.state.__FaProgressBarVerticalAlign !== "" ? {
+                            verticalAlign: this.state.__FaProgressBarVerticalAlign,
+                            horizontalAlign: this.state.__FaProgressBarHorizontalAlign
+                        } : ""}
+                    />
+                )}
+
+                {/* Prompt Dialog */}
+                {this.state.__PromptDialogShow && (
+                    <PromptDialog
+                        title={this.state.__PromptDialogTitle}
+                        message={this.state.__PromptDialogMessage}
+                        onConfirm={this.__PDRunAction}/>
+                )}
+
+            </ModuleAccessible>
+        )
+    }
+}
+
+export default Users;

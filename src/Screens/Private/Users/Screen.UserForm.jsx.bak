@@ -1,0 +1,700 @@
+import React, {Component} from 'react';
+import PropTypes from 'prop-types';
+import FullScreenDialog from "../../../Components/Private/FullScreenDialog/FullScreenDialog";
+import {makeStyles, withStyles} from '@material-ui/core/styles';
+import Grid from "@material-ui/core/Grid";
+import Avatar from '@material-ui/core/Avatar';
+import Button from "@material-ui/core/Button";
+import Paper from "@material-ui/core/Paper";
+import {APP} from "../../../App/AppProvider";
+import TextField from "@material-ui/core/TextField";
+import AutoCompleteSelect from "../../../Components/Private/AutoCompleteSelect/AutoCompleteSelect";
+import Checkbox from "@material-ui/core/Checkbox";
+import FormControlLabel from "@material-ui/core/FormControlLabel";
+import axios from "axios";
+import FloatingAlert from "../../../Components/Common/FloatingAlert/FloatingAlert";
+import FloatingProgressbar from "../../../Components/Common/FloatingProgressbar/FloatingProgressbar";
+import PromptDialog from "../../../Components/Common/PromptDialog/PromptDialog";
+import ModuleAccessible from "../../../Vendor/Middleware/ModuleAccessible/ModuleAccessible";
+
+const Auth = APP.SERVICES.AUTH;
+
+const useStyles = makeStyles((theme) => ({
+    root: {
+        display: 'flex',
+        '& > *': {
+            margin: theme.spacing(1),
+        },
+    },
+    Avatar: {
+        width: theme.spacing(22),
+        height: theme.spacing(22),
+        display: "inline-block",
+    },
+
+    TextField: {
+        "& .MuiOutlinedInput-root": {},
+        "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
+            borderColor: ""
+        },
+        "&:hover .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
+            borderColor: ""
+        },
+        "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+            borderColor: APP.CONFIG.COLORS.PRIMARY,
+        },
+    }
+}));
+
+const MaterialCheckbox = withStyles({
+    root: {
+        color: APP.CONFIG.COLORS.PRIMARY,
+        '&$checked': {
+            color: APP.CONFIG.COLORS.PRIMARY,
+        },
+    },
+    checked: {},
+})((props) => <Checkbox color="default" {...props} />);
+
+const UserProfileForm = (props) => {
+    const classes = useStyles();
+
+    const [File, setFile] = React.useState(null);
+    const [ImagesAttributes, setImagesAttributes] = React.useState([]);
+    const [ImagePreviewUrl, setImagePreviewUrl] = React.useState('');
+
+    const ProfilePhotoChange = (e) => {
+        e.preventDefault();
+        let reader = new FileReader();
+        let file = e.target.files[0];
+
+        reader.onloadend = () => {
+            setFile(file);
+            setImagePreviewUrl(reader.result);
+        }
+
+        reader.readAsDataURL(file);
+    };
+
+    const [CompanyID, setCompanyID] = React.useState(0);
+    const [IsMasterUser, setIsMasterUser] = React.useState(0);
+    const [FullName, setFullName] = React.useState('');
+    const [Email, setEmail] = React.useState('');
+    const [Password, setPassword] = React.useState('');
+    const [ContactNumber, setContactNumber] = React.useState('');
+    const [Address, setAddress] = React.useState('');
+    const [MasterUserEditable, setMasterUserEditable] = React.useState(0);
+    const [EditAble, setEditAble] = React.useState(0);
+
+
+    React.useEffect(() => {
+        setCompanyID(props.CompanyID);
+        setIsMasterUser(props.IsMasterUser);
+        setEmail(props.email);
+        setFullName(props.FullName);
+        setContactNumber(props.ContactNumber);
+        setAddress(props.Address);
+        setImagePreviewUrl(props.ProfilePhoto);
+        setMasterUserEditable(props.MasterUserEditable);
+        setEditAble(props.EditAble);
+    }, [props.CompanyID, props.IsMasterUser, props.email, props.FullName, props.ContactNumber, props.Address, props.MasterUserEditable, props.EditAble, setMasterUserEditable, setEditAble, props.ProfilePhoto]);
+
+    return (
+        <div style={{padding: "10px", marginTop: "20px"}}>
+            <Grid container spacing={1}>
+                <Grid item xs={12} sm={4}>
+
+                    <div style={{textAlign: "center"}}>
+                        <Avatar alt="" src={ImagePreviewUrl} className={classes.Avatar}/>
+                    </div>
+                    <div style={{textAlign: "center", marginTop: "15px", marginBottom: "15px"}}>
+
+                        <input
+                            style={{display: "none"}}
+                            type="file" accept="image/*"
+                            id="ProfilePhotoPicker"
+                            onChange={ProfilePhotoChange} ref={(input) => {
+                            ImagesAttributes[0] = input
+                        }}/>
+                        <label htmlFor="ProfilePhotoPicker">
+                            <Button variant={"contained"} size="small"
+                                    style={{background: APP.CONFIG.COLORS.PRIMARY, color: "#ffffff"}}
+                                    component="span">Change
+                                Photo</Button>
+                        </label>
+
+                    </div>
+
+                </Grid>
+
+                <Grid item xs={12} sm={8}>
+                    <Paper variant={"outlined"} square={false} style={{padding: "20px"}}>
+                        <h3 style={{marginTop: 0}}>Profile Info</h3>
+
+                        <AutoCompleteSelect label={"User Role"} options={props.dataUserRoles}
+                                            selectedValue={(props.actionMode === 'EDIT' || props.actionMode === 'VIEW') ? props.selectedUserRoleID : 0}
+                                            onChange={props.onChangeUserRoleID}/>
+
+                        <FormControlLabel
+                            control={
+                                <MaterialCheckbox checked={IsMasterUser} disabled={MasterUserEditable === '1'} onChange={() => setIsMasterUser(!(IsMasterUser))}/>
+                            }
+                            label="Master User"
+                        />
+
+                        <br/>
+
+                        <TextField
+                            fullWidth={true}
+                            variant={"outlined"}
+                            size={"small"}
+                            label="Full Name"
+                            className={classes.TextField}
+                            value={FullName}
+                            onChange={(e) => setFullName(e.target.value)}
+                        />
+
+                        <br/>
+                        <br/>
+
+                        <TextField
+                            fullWidth={true}
+                            type={"email"}
+                            variant={"outlined"}
+                            size={"small"}
+                            label="Email Address"
+                            className={classes.TextField}
+                            value={Email}
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
+
+                        <br/>
+                        <br/>
+
+                        <TextField
+                            fullWidth={true}
+                            variant={"outlined"}
+                            size={"small"}
+                            label="Contact Number"
+                            className={classes.TextField}
+                            value={ContactNumber}
+                            onChange={(e) => setContactNumber(e.target.value)}
+                        />
+
+                        <br/>
+                        <br/>
+
+                        <TextField
+                            fullWidth={true}
+                            variant={"outlined"}
+                            size={"small"}
+                            label="Address"
+                            rows={2}
+                            rowsMax={4}
+                            multiline={true}
+                            className={classes.TextField}
+                            value={Address}
+                            onChange={(e) => setAddress(e.target.value)}
+                        />
+
+                        <br/>
+                        <br/>
+
+                        <TextField
+                            fullWidth={true}
+                            type={"password"}
+                            variant={"outlined"}
+                            size={"small"}
+                            label="Password"
+                            className={classes.TextField}
+                            value={Password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
+                    </Paper>
+                </Grid>
+            </Grid>
+        </div>
+    );
+};
+
+UserProfileForm.propTypes = {
+    actionMode: PropTypes.string.isRequired,
+    dataUserRoles: PropTypes.array.isRequired,
+    selectedUserRoleID: PropTypes.number.isRequired,
+    CompanyID: PropTypes.number.isRequired,
+    IsMasterUser: PropTypes.number.isRequired,
+    FullName: PropTypes.string.isRequired,
+    email: PropTypes.string.isRequired,
+    ContactNumber: PropTypes.string.isRequired,
+    Address: PropTypes.string.isRequired,
+    ProfilePhoto: PropTypes.string.isRequired,
+    MasterUserEditable: PropTypes.number.isRequired,
+    EditAble: PropTypes.number.isRequired,
+    onChangeUserRoleID: PropTypes.func.isRequired,
+}
+
+
+class UserProfileFormScreen extends Component {
+    constructor(props, context) {
+        super(props, context);
+
+        this.state = {
+            /**
+             * --------------------------------------------------------------------------
+             * Core States
+             */
+            __FaShow: false,
+            __FaType: "",
+            __FaMessage: "",
+            __FaDuration: "",
+            __FaVerticalAlign: "",
+            __FaHorizontalAlign: "",
+
+            __FaProgressBarShow: false,
+            __FaProgressBarType: "",
+            __FaProgressBarMessage: "",
+            __FaProgressBarVerticalAlign: "",
+            __FaProgressBarHorizontalAlign: "",
+
+            __PromptDialogShow: false,
+            __PromptDialogTargetActionName: "",
+            __PromptDialogTargetActionID: "",
+            __PromptDialogTitle: "",
+            __PromptDialogMessage: "",
+            /**
+             * Core States End
+             * --------------------------------------------------------------------------
+             */
+
+
+            DataUserRoles: [],
+
+            CompanyID: 0,
+            IsMasterUser: 0,
+            FullName: "",
+            email: "",
+            ContactNumber: "",
+            Address: "",
+            ProfilePhoto: "",
+            MasterUserEditable: 0,
+            EditAble: 0,
+
+            ProfileImageFile: null,
+
+            SelectedUserRoleID: 0,
+        };
+
+
+        this.handleIsMasterUser = this.handleIsMasterUser.bind(this);
+        this.handleFullName = this.handleFullName.bind(this);
+        this.handleEmail = this.handleEmail.bind(this);
+        this.handleContactNumber = this.handleContactNumber.bind(this);
+        this.handleAddress = this.handleAddress.bind(this);
+        this.handleProfilePhoto = this.handleProfilePhoto.bind(this);
+        this.handleProfileImageFile = this.handleProfileImageFile.bind(this);
+
+
+        /**
+         * ---------------------------------------------------------------------------------
+         * Core Method Bindings
+         */
+        this.__SetFA = this.__SetFA.bind(this);
+        this.__RemoveFA = this.__RemoveFA.bind(this);
+        this.__SetFAP = this.__SetFAP.bind(this);
+        this.__RemoveFAP = this.__RemoveFAP.bind(this);
+        this.__PD = this.__PD.bind(this);
+        this.__PDRunAction = this.__PDRunAction.bind(this);
+        /**
+         * Core Method Binding Ends
+         * ---------------------------------------------------------------------------------
+         */
+
+
+        this.GetFreeUserRoles = this.GetFreeUserRoles.bind(this);
+        this.GetUserProfile = this.GetUserProfile.bind(this);
+        this.handleChangeUserRoleID = this.handleChangeUserRoleID.bind(this);
+
+        this.keyDownHandler = this.keyDownHandler.bind(this);
+    }
+
+
+    /**
+     * ---------------------------------------------------------------------------------
+     * Core Method Declaration
+     */
+    __SetFA(type, message, duration, verticalAlign, horizontalAlign) {
+        this.__RemoveFAP();
+
+        type = typeof type === "undefined" ? "" : type;
+        message = typeof message === "undefined" ? "" : message;
+        duration = typeof duration === "undefined" ? "" : duration;
+        verticalAlign = typeof verticalAlign === "undefined" ? "" : verticalAlign;
+        horizontalAlign = typeof horizontalAlign === "undefined" ? "" : horizontalAlign;
+
+        this.setState({
+            __FaShow: false,
+            __FaType: "",
+            __FaMessage: "",
+            __FaDuration: "",
+            __FaVerticalAlign: "",
+            __FaHorizontalAlign: "",
+        }, () => {
+            this.setState({
+                __FaShow: true,
+                __FaType: type,
+                __FaMessage: message,
+                __FaDuration: duration === '' ? 0 : Number(duration),
+                __FaVerticalAlign: verticalAlign,
+                __FaHorizontalAlign: horizontalAlign,
+            });
+        });
+    }
+
+    __RemoveFA() {
+        this.setState({
+            __FaShow: false,
+            __FaType: "",
+            __FaMessage: "",
+            __FaDuration: "",
+            __FaVerticalAlign: "",
+            __FaHorizontalAlign: "",
+        });
+    }
+
+    __SetFAP(type, message, verticalAlign, horizontalAlign) {
+        this.__RemoveFA();
+
+        this.setState({
+            __FaProgressBarShow: false,
+            __FaProgressBarType: "",
+            __FaProgressBarMessage: "",
+            __FaProgressBarVerticalAlign: "",
+            __FaProgressBarHorizontalAlign: "",
+        }, () => {
+            this.setState({
+                __FaProgressBarShow: true,
+                __FaProgressBarType: type,
+                __FaProgressBarMessage: message,
+                __FaProgressBarVerticalAlign: verticalAlign,
+                __FaProgressBarHorizontalAlign: horizontalAlign,
+            });
+        });
+    }
+
+    __RemoveFAP() {
+        this.setState({
+            __FaProgressBarShow: false,
+            __FaProgressBarType: "",
+            __FaProgressBarMessage: "",
+            __FaProgressBarVerticalAlign: "",
+            __FaProgressBarHorizontalAlign: "",
+        });
+    }
+
+    __PD(action_name, action_id, title, message) {
+        this.setState({
+            __PromptDialogShow: false,
+            __PromptDialogTitle: "",
+            __PromptDialogMessage: "",
+            __PromptDialogTargetActionName: "",
+            __PromptDialogTargetActionID: "",
+        }, () => {
+            this.setState({
+                __PromptDialogShow: true,
+                __PromptDialogTitle: title,
+                __PromptDialogMessage: message,
+                __PromptDialogTargetActionName: action_name,
+                __PromptDialogTargetActionID: action_id,
+            });
+        })
+    }
+
+    __PDRunAction() {
+
+        let action_name = this.state.__PromptDialogTargetActionName;
+        let action_id = this.state.__PromptDialogTargetActionID;
+
+        //call your callback confirm functions here
+        if (action_name === "DeleteUser") {
+            this.TryUserDelete(action_id);
+        }
+
+    }
+
+    /**
+     * Core Method Declaration Ends
+     * ---------------------------------------------------------------------------------
+     */
+
+
+
+    handleChangeUserRoleID(RoleID) {
+        this.setState({
+            SelectedUserRoleID: RoleID,
+        });
+    }
+
+
+    handleIsMasterUser(IsMasterUser) {
+        this.setState({
+            IsMasterUser: IsMasterUser,
+        });
+    }
+
+    handleFullName(e) {
+        this.setState({
+            FullName: e.target.value,
+        });
+    }
+
+    handleEmail(e) {
+        this.setState({
+            email: e.target.value,
+        });
+    }
+
+    handleContactNumber(e) {
+        this.setState({
+            ContactNumber: e.target.value,
+        });
+    }
+
+    handleAddress(e) {
+        this.setState({
+            Address: e.target.value,
+        });
+    }
+
+    handleProfilePhoto(e) {
+        this.setState({
+            ProfilePhoto: e.target.value,
+        });
+    }
+
+    handleProfileImageFile(File) {
+        this.setState({
+            ProfileImageFile: File,
+        });
+    }
+
+
+    /**
+     *
+     */
+    GetFreeUserRoles() {
+        this.__SetFAP("general", "Loading", "top", "center");
+
+        axios.get(APP.ENV.URL.API.ROOT + '/free_user_role_list', {
+            headers: {
+                Authorization: `Bearer ${Auth.getToken()}`,
+            },
+        }).then((response) => {
+
+            this.__RemoveFAP();
+
+            if (response.data.success) {
+
+                this.setState({
+                    DataUserRoles: response.data.user_role_list,
+                    SelectedUserRoleID: 0,
+                });
+
+            }
+
+        }).catch((error) => {
+
+            this.__RemoveFAP();
+
+            if (error.response) {
+                if (error.response.status === 401) {
+                    Auth.remove(this.props);
+                }
+
+                if (error.response.status === 403) {
+                    this.setState({
+                        DataUserRoles: [],
+                    });
+                    this.__SetFA("error", error.response.data.message);
+                }
+            } else {
+                new APP.SERVICES.NETWORK_FAILURE().SetError();
+            }
+
+        });
+    }
+
+
+    /**
+     *
+     */
+    GetUserProfile() {
+        this.__SetFAP("general", "Loading", "top", "center");
+
+        axios.get(APP.ENV.URL.API.ROOT + '/users/profile?id=' + this.props.actionId, {
+            headers: {
+                Authorization: `Bearer ${Auth.getToken()}`,
+            },
+        }).then((response) => {
+
+            this.__RemoveFAP();
+
+            if (response.data.success) {
+
+                let $user = response.data.user;
+
+                this.setState({
+                    CompanyID: $user.CompanyID,
+                    IsMasterUser: $user.IsMasterUser,
+                    FullName: $user.FullName,
+                    email: $user.email,
+                    ContactNumber: $user.ContactNumber,
+                    Address: $user.Address,
+                    ProfilePhoto: $user.ProfilePhoto,
+                    MasterUserEditable: $user.MasterUserEditable,
+                    EditAble: $user.EditAble,
+                    SelectedUserRoleID: $user.UserRoleID,
+                });
+
+            }
+
+        }).catch((error) => {
+
+            this.__RemoveFAP();
+
+            if (error.response) {
+                if (error.response.status === 401) {
+                    Auth.remove(this.props);
+                }
+
+                if (error.response.status === 403) {
+                    this.setState({
+                        DataUserProfile: {},
+                    });
+                    this.__SetFA("error", error.response.data.message);
+                }
+            } else {
+                new APP.SERVICES.NETWORK_FAILURE().SetError();
+            }
+
+        });
+    }
+
+    keyDownHandler(e) {
+        if (e.keyCode === 83 && e.ctrlKey) {
+            e.preventDefault();
+            alert("CTRL + S");
+        }
+    }
+
+    componentDidMount() {
+        document.addEventListener('keydown', this.keyDownHandler);
+
+        this.GetFreeUserRoles();
+
+        if (this.props.actionMode === 'EDIT' || this.props.actionMode === 'VIEW') {
+            this.GetUserProfile();
+        }
+    }
+
+
+    render() {
+        return (
+            <React.Fragment>
+
+                <UserProfileForm actionMode={this.props.actionMode}
+                                 dataUserRoles={this.state.DataUserRoles}
+                                 selectedUserRoleID={this.state.SelectedUserRoleID}
+                                 dataUserProfile={this.state.DataUserProfile}
+                                 onChangeUserRoleID={this.handleChangeUserRoleID}
+                                 CompanyID={this.state.CompanyID}
+                                 IsMasterUser={this.state.IsMasterUser}
+                                 FullName={this.state.FullName}
+                                 email={this.state.email}
+                                 ContactNumber={this.state.ContactNumber}
+                                 Address={this.state.Address}
+                                 ProfilePhoto={this.state.ProfilePhoto}
+                                 MasterUserEditable={this.state.MasterUserEditable}
+                                 EditAble={this.state.EditAble}
+                />
+
+
+                {/* Floating Alert */}
+                {this.state.__FaShow && (
+                    <FloatingAlert
+                        show={this.state.__FaShow}
+                        type={this.state.__FaType}
+                        message={this.state.__FaMessage}
+                        duration={this.state.__FaDuration}
+                        verticalAlign={this.state.__FaVerticalAlign}
+                        horizontalAlign={this.state.__FaHorizontalAlign}
+                    />
+                )}
+
+
+                {/* Floating Progress Bar */}
+                {this.state.__FaProgressBarShow && (
+                    <FloatingProgressbar
+                        show={this.state.__FaProgressBarShow}
+                        type={this.state.__FaProgressBarType}
+                        {...this.state.__FaProgressBarMessage !== "" ? {message: this.state.__FaProgressBarMessage} : ""}
+                        {...this.state.__FaProgressBarVerticalAlign !== "" ? {
+                            verticalAlign: this.state.__FaProgressBarVerticalAlign,
+                            horizontalAlign: this.state.__FaProgressBarHorizontalAlign
+                        } : ""}
+                    />
+                )}
+
+                {/* Prompt Dialog */}
+                {this.state.__PromptDialogShow && (
+                    <PromptDialog
+                        title={this.state.__PromptDialogTitle}
+                        message={this.state.__PromptDialogMessage}
+                        onConfirm={this.__PDRunAction}/>
+                )}
+            </React.Fragment>
+        );
+    }
+}
+
+UserProfileFormScreen.propTypes = {
+    actionMode: PropTypes.oneOf(['ADD', 'EDIT', 'VIEW']).isRequired,
+    actionId: PropTypes.number.isRequired,
+};
+
+
+class Screen extends Component {
+
+    handleSubmitUserForm() {
+
+    }
+    render() {
+        return (
+            <FullScreenDialog
+                open={this.props.open}
+                onClose={this.props.onClose}
+                title={this.props.actionMode === 'ADD' ? 'Add User' : this.props.actionMode === 'EDIT' ? 'Edit User' : this.props.actionMode === 'VIEW' ? 'User Profile' : null}
+                hasSubmitButton={true}
+                submitButtonTitle={"Save"}
+                submitButtonDisabled={false}
+                onSubmit={""}>
+
+                {this.props.open && (
+                    <UserProfileFormScreen
+                        actionMode={this.props.actionMode}
+                        actionId={this.props.actionId}
+                    />
+                )}
+
+            </FullScreenDialog>
+        );
+    }
+}
+
+Screen.propTypes = {
+    open: PropTypes.func.isRequired,
+    onClose: PropTypes.func.isRequired,
+    actionMode: PropTypes.oneOf(['ADD', 'EDIT']).isRequired,
+    actionId: PropTypes.number.isRequired,
+};
+
+export {Screen};

@@ -1,0 +1,45 @@
+@media print {
+  .button-print {
+    display: none;
+  }
+  #delete-button {
+    visibility: hidden;
+  }
+  #printableArea {
+    margin: 0;
+    border: none !important;
+  }
+
+}
+
+#printableArea {
+  margin-top: 1cm;
+  border: 2px solid red;
+  background:#ffffff;
+}
+
+.RegularHeader {
+  width: 100%;
+  padding: 0;
+  margin-bottom: 1cm;
+}
+
+img {
+  width: 100%;
+}
+
+.company_details {
+  width: 85%;
+  padding-left: 10px;
+  vertical-align: top;
+}
+
+companyname {
+  display: block;
+  font-size: 30px;
+  font-weight: bold;
+}
+otherdetail {
+  display: block;
+  font-size: 15px;
+}
